@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\PersonnelController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -21,4 +22,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Client management routes
     Route::apiResource('clients', ClientController::class);
+    
+    // Personnel management routes
+    Route::apiResource('personnel', PersonnelController::class);
 });

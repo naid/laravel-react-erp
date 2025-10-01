@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
 
 interface Employee {
     id: number;
@@ -15,6 +16,7 @@ interface Employee {
 }
 
 const EmployeeManagement: React.FC = () => {
+    const { token } = useAuth();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -23,53 +25,46 @@ const EmployeeManagement: React.FC = () => {
     );
     const [searchTerm, setSearchTerm] = useState("");
     const [filterDepartment, setFilterDepartment] = useState("all");
+    const [error, setError] = useState<string | null>(null);
 
-    // Mock data for demonstration
+    // Fetch employees from API
     useEffect(() => {
-        const mockEmployees: Employee[] = [
-            {
-                id: 1,
-                first_name: "John",
-                last_name: "Doe",
-                email: "john.doe@company.com",
-                position: "Software Engineer",
-                department: "Engineering",
-                hire_date: "2023-01-15",
-                salary: 75000,
-                status: "active",
-                phone: "+1 (555) 123-4567",
-                address: "123 Main St, City, State 12345",
-            },
-            {
-                id: 2,
-                first_name: "Jane",
-                last_name: "Smith",
-                email: "jane.smith@company.com",
-                position: "Project Manager",
-                department: "Management",
-                hire_date: "2022-06-20",
-                salary: 85000,
-                status: "active",
-                phone: "+1 (555) 234-5678",
-                address: "456 Oak Ave, City, State 12345",
-            },
-            {
-                id: 3,
-                first_name: "Mike",
-                last_name: "Johnson",
-                email: "mike.johnson@company.com",
-                position: "Designer",
-                department: "Design",
-                hire_date: "2023-03-10",
-                salary: 65000,
-                status: "active",
-                phone: "+1 (555) 345-6789",
-                address: "789 Pine St, City, State 12345",
-            },
-        ];
-        setEmployees(mockEmployees);
-        setLoading(false);
-    }, []);
+        const fetchEmployees = async () => {
+            if (!token) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                setLoading(true);
+                setError(null);
+
+                const response = await fetch("/api/personnel", {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json",
+                    },
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log("Employees loaded:", data);
+                    setEmployees(data.personnel || []);
+                } else {
+                    const errorData = await response.json();
+                    console.error("Failed to load employees:", errorData);
+                    setError(errorData.message || "Failed to load employees");
+                }
+            } catch (error) {
+                console.error("Error fetching employees:", error);
+                setError("Network error while loading employees");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchEmployees();
+    }, [token]);
 
     const filteredEmployees = employees.filter((employee) => {
         const matchesSearch =
@@ -92,6 +87,154 @@ const EmployeeManagement: React.FC = () => {
     const departments = Array.from(
         new Set(employees.map((emp) => emp.department))
     );
+
+    // Handle form submission
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!token) return;
+
+        const formData = new FormData(e.currentTarget);
+        const employeeData = {
+            first_name: formData.get("first_name") as string,
+            last_name: formData.get("last_name") as string,
+            email: formData.get("email") as string,
+            position: formData.get("position") as string,
+            department: formData.get("department") as string,
+            hire_date: formData.get("hire_date") as string,
+            salary: parseFloat(formData.get("salary") as string) || 0,
+            phone: formData.get("phone") as string,
+            address: formData.get("address") as string,
+        };
+
+        try {
+            const url = editingEmployee
+                ? `/api/personnel/${editingEmployee.id}`
+                : "/api/personnel";
+            const method = editingEmployee ? "PUT" : "POST";
+
+            const response = await fetch(url, {
+                method,
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                    Accept: "application/json",
+                },
+                body: JSON.stringify(employeeData),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log("Employee saved:", data);
+
+                // Refresh the employees list
+                const employeesResponse = await fetch("/api/personnel", {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json",
+                    },
+                });
+
+                if (employeesResponse.ok) {
+                    const employeesData = await employeesResponse.json();
+                    setEmployees(employeesData.personnel || []);
+                }
+
+                setShowModal(false);
+                setEditingEmployee(null);
+            } else {
+                const errorData = await response.json();
+                console.error("Failed to save employee:", errorData);
+                setError(errorData.message || "Failed to save employee");
+            }
+        } catch (error) {
+            console.error("Error saving employee:", error);
+            setError("Network error while saving employee");
+        }
+    };
+
+    // Handle delete employee
+    const handleDelete = async (employeeId: number) => {
+        if (
+            !token ||
+            !confirm("Are you sure you want to delete this employee?")
+        )
+            return;
+
+        try {
+            const response = await fetch(`/api/personnel/${employeeId}`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: "application/json",
+                },
+            });
+
+            if (response.ok) {
+                // Refresh the employees list
+                const employeesResponse = await fetch("/api/personnel", {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json",
+                    },
+                });
+
+                if (employeesResponse.ok) {
+                    const employeesData = await employeesResponse.json();
+                    setEmployees(employeesData.personnel || []);
+                }
+            } else {
+                const errorData = await response.json();
+                console.error("Failed to delete employee:", errorData);
+                setError(errorData.message || "Failed to delete employee");
+            }
+        } catch (error) {
+            console.error("Error deleting employee:", error);
+            setError("Network error while deleting employee");
+        }
+    };
+
+    // Show loading state
+    if (loading) {
+        return (
+            <div className="space-y-6">
+                <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                    <div className="flex items-center justify-center py-12">
+                        <div className="text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                            <p className="mt-4 text-gray-600">
+                                Loading employees...
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Show error state
+    if (error) {
+        return (
+            <div className="space-y-6">
+                <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                    <div className="flex items-center justify-center py-12">
+                        <div className="text-center">
+                            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                Error Loading Employees
+                            </h3>
+                            <p className="text-gray-600 mb-4">{error}</p>
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                            >
+                                Retry
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -400,7 +543,12 @@ const EmployeeManagement: React.FC = () => {
                                             >
                                                 Edit
                                             </button>
-                                            <button className="text-red-600 hover:text-red-900">
+                                            <button
+                                                onClick={() =>
+                                                    handleDelete(employee.id)
+                                                }
+                                                className="text-red-600 hover:text-red-900"
+                                            >
                                                 Delete
                                             </button>
                                         </div>
@@ -422,7 +570,7 @@ const EmployeeManagement: React.FC = () => {
                                     ? "Edit Employee"
                                     : "Add New Employee"}
                             </h3>
-                            <form className="space-y-4">
+                            <form onSubmit={handleSubmit} className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700">
@@ -430,11 +578,13 @@ const EmployeeManagement: React.FC = () => {
                                         </label>
                                         <input
                                             type="text"
+                                            name="first_name"
                                             defaultValue={
                                                 editingEmployee?.first_name ||
                                                 ""
                                             }
                                             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                            required
                                         />
                                     </div>
                                     <div>
@@ -443,10 +593,12 @@ const EmployeeManagement: React.FC = () => {
                                         </label>
                                         <input
                                             type="text"
+                                            name="last_name"
                                             defaultValue={
                                                 editingEmployee?.last_name || ""
                                             }
                                             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                            required
                                         />
                                     </div>
                                 </div>
@@ -456,6 +608,7 @@ const EmployeeManagement: React.FC = () => {
                                     </label>
                                     <input
                                         type="email"
+                                        name="email"
                                         defaultValue={
                                             editingEmployee?.email || ""
                                         }
@@ -469,6 +622,7 @@ const EmployeeManagement: React.FC = () => {
                                         </label>
                                         <input
                                             type="text"
+                                            name="position"
                                             defaultValue={
                                                 editingEmployee?.position || ""
                                             }
@@ -480,6 +634,7 @@ const EmployeeManagement: React.FC = () => {
                                             Department
                                         </label>
                                         <select
+                                            name="department"
                                             defaultValue={
                                                 editingEmployee?.department ||
                                                 ""
@@ -512,6 +667,7 @@ const EmployeeManagement: React.FC = () => {
                                         </label>
                                         <input
                                             type="number"
+                                            name="salary"
                                             defaultValue={
                                                 editingEmployee?.salary || ""
                                             }
@@ -520,22 +676,44 @@ const EmployeeManagement: React.FC = () => {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700">
-                                            Status
+                                            Hire Date
                                         </label>
-                                        <select
+                                        <input
+                                            type="date"
+                                            name="hire_date"
                                             defaultValue={
-                                                editingEmployee?.status ||
-                                                "active"
+                                                editingEmployee?.hire_date || ""
                                             }
                                             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                        >
-                                            <option value="active">
-                                                Active
-                                            </option>
-                                            <option value="inactive">
-                                                Inactive
-                                            </option>
-                                        </select>
+                                        />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            Phone
+                                        </label>
+                                        <input
+                                            type="tel"
+                                            name="phone"
+                                            defaultValue={
+                                                editingEmployee?.phone || ""
+                                            }
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            Address
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="address"
+                                            defaultValue={
+                                                editingEmployee?.address || ""
+                                            }
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        />
                                     </div>
                                 </div>
                                 <div className="flex justify-end space-x-3 pt-4">
