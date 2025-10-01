@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Login from "./Login";
 import Dashboard from "./Dashboard";
@@ -11,11 +11,62 @@ import ReportsAnalytics from "./modules/ReportsAnalytics";
 import Settings from "./modules/Settings";
 
 const AppContent: React.FC = () => {
-    const { user, token } = useAuth();
+    const { user, client, token } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [currentModule, setCurrentModule] = useState("dashboard");
 
     console.log("AppContent - user:", user, "token:", token);
+
+    // Log cookies when user is authenticated and navigates to dashboard
+    useEffect(() => {
+        if (user && token) {
+            const logNavigationCookies = () => {
+                console.log("🚀 === NAVIGATION COOKIE CONTENTS ===");
+                console.log("All cookies:", document.cookie);
+
+                if (document.cookie) {
+                    const cookies = document.cookie
+                        .split(";")
+                        .reduce((acc, cookie) => {
+                            const [key, value] = cookie.trim().split("=");
+                            acc[key] = value;
+                            return acc;
+                        }, {} as Record<string, string>);
+
+                    console.log("Parsed cookies:", cookies);
+
+                    // Log specific Laravel cookies
+                    Object.keys(cookies).forEach((cookieName) => {
+                        if (
+                            cookieName.includes("laravel") ||
+                            cookieName.includes("session") ||
+                            cookieName.includes("sanctum") ||
+                            cookieName.includes("csrf")
+                        ) {
+                            console.log(
+                                `🔑 ${cookieName}:`,
+                                cookies[cookieName]
+                            );
+                        }
+                    });
+                } else {
+                    console.log("No cookies found");
+                }
+
+                console.log(
+                    "📱 Local Storage token:",
+                    localStorage.getItem("token")
+                );
+                console.log("👤 Current user:", user);
+                console.log("🏢 Current client:", client);
+                console.log("🔐 Current token:", token);
+                console.log("🚀 === END NAVIGATION COOKIE LOG ===");
+            };
+
+            // Log cookies when user navigates to authenticated area
+            logNavigationCookies();
+        }
+    }, [user, token]);
 
     // Show login page if user is not authenticated
     if (!user || !token) {

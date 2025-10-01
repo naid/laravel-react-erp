@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RoleSeeder::class,
+            DefaultClientSeeder::class,
         ]);
 
         // Create a test user
@@ -23,6 +24,7 @@ class DatabaseSeeder extends Seeder
             'first_name' => 'Admin',
             'last_name' => 'User',
             'password' => bcrypt('password'),
+            'client_id' => 1, // Assign to NaidSystems client
         ]);
     }
 }

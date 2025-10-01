@@ -12,7 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Temporarily disabled middleware to debug redirect issue
+        // $middleware->web(append: [
+        //     \App\Http\Middleware\ValidateClientCookies::class,
+        // ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

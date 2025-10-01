@@ -3,7 +3,14 @@ export interface User {
     email: string;
     first_name: string;
     last_name: string;
+    client_id: number;
     roles: Role[];
+}
+
+export interface Client {
+    id: number;
+    name: string;
+    email: string;
 }
 
 export interface Role {
@@ -13,6 +20,7 @@ export interface Role {
 
 export interface AuthContextType {
     user: User | null;
+    client: Client | null;
     token: string | null;
     login: (
         email: string,

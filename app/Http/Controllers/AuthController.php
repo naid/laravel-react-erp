@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use App\Models\User;
 use App\Models\Role;
+use App\Services\CookieSecurityService;
 
 class AuthController extends Controller
 {
@@ -26,17 +27,51 @@ class AuthController extends Controller
             $user = Auth::user();
             $token = $user->createToken('auth-token')->plainTextToken;
             
-            return response()->json([
+            // Get client information
+            $client = $user->client_id ? \App\Models\Client::find($user->client_id) : null;
+            
+            $response = response()->json([
                 'message' => 'Login successful',
                 'user' => [
                     'id' => $user->id,
                     'email' => $user->email,
                     'first_name' => $user->first_name,
                     'last_name' => $user->last_name,
+                    'client_id' => $user->client_id,
                     'roles' => $user->roles,
                 ],
+                'client' => $client ? [
+                    'id' => $client->id,
+                    'name' => $client->name,
+                    'email' => $client->email,
+                ] : null,
                 'token' => $token,
             ]);
+            
+            // Set secure client cookies if client exists
+            if ($client) {
+                $secureClientData = CookieSecurityService::createSecureClientCookie([
+                    'id' => $client->id,
+                    'name' => $client->name,
+                    'email' => $client->email,
+                    'user_id' => $user->id,
+                    'nonce' => CookieSecurityService::generateNonce(),
+                ]);
+                
+                $response->cookie(
+                    'client_data',
+                    $secureClientData['client_data'],
+                    60 * 24 * 7, // 7 days
+                    '/',
+                    null,
+                    true, // secure
+                    true, // httpOnly
+                    false,
+                    'Lax'
+                );
+            }
+            
+            return $response;
         }
 
         throw ValidationException::withMessages([
@@ -63,14 +98,54 @@ class AuthController extends Controller
     {
         $user = $request->user();
         
+        // Get client information
+        $client = $user->client_id ? \App\Models\Client::find($user->client_id) : null;
+        
         return response()->json([
             'user' => [
                 'id' => $user->id,
                 'email' => $user->email,
                 'first_name' => $user->first_name,
                 'last_name' => $user->last_name,
+                'client_id' => $user->client_id,
                 'roles' => $user->roles,
             ],
+            'client' => $client ? [
+                'id' => $client->id,
+                'name' => $client->name,
+                'email' => $client->email,
+            ] : null,
+        ]);
+    }
+
+    /**
+     * Get client information from secure cookie
+     */
+    public function getClientInfo(Request $request): JsonResponse
+    {
+        // First try to get from middleware (if available)
+        $client = $request->attributes->get('validated_client');
+        
+        // If not available, get from authenticated user
+        if (!$client && Auth::check()) {
+            $user = Auth::user();
+            if ($user->client_id) {
+                $client = \App\Models\Client::find($user->client_id);
+            }
+        }
+        
+        if (!$client) {
+            return response()->json([
+                'error' => 'No valid client found'
+            ], 404);
+        }
+        
+        return response()->json([
+            'client' => [
+                'id' => $client->id,
+                'name' => $client->name,
+                'email' => $client->email,
+            ]
         ]);
     }
 

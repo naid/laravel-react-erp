@@ -1,8 +1,53 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useAuth } from "./contexts/AuthContext";
 
 const Dashboard: React.FC = () => {
-    const { user, logout } = useAuth();
+    const { user, client, logout } = useAuth();
+
+    // Log cookies when Dashboard component mounts
+    useEffect(() => {
+        const logCookies = () => {
+            console.log("🏠 === DASHBOARD COOKIE CONTENTS ===");
+            console.log("All cookies:", document.cookie);
+
+            if (document.cookie) {
+                const cookies = document.cookie
+                    .split(";")
+                    .reduce((acc, cookie) => {
+                        const [key, value] = cookie.trim().split("=");
+                        acc[key] = value;
+                        return acc;
+                    }, {} as Record<string, string>);
+
+                console.log("Parsed cookies:", cookies);
+
+                // Log specific Laravel cookies
+                Object.keys(cookies).forEach((cookieName) => {
+                    if (
+                        cookieName.includes("laravel") ||
+                        cookieName.includes("session") ||
+                        cookieName.includes("sanctum") ||
+                        cookieName.includes("csrf")
+                    ) {
+                        console.log(`🔑 ${cookieName}:`, cookies[cookieName]);
+                    }
+                });
+            } else {
+                console.log("No cookies found");
+            }
+
+            console.log(
+                "📱 Local Storage token:",
+                localStorage.getItem("token")
+            );
+            console.log("👤 Current user:", user);
+            console.log("🏢 Current client:", client);
+            console.log("🏠 === END DASHBOARD COOKIE LOG ===");
+        };
+
+        // Log cookies when dashboard loads
+        logCookies();
+    }, [user]);
 
     const handleLogout = async () => {
         await logout();
@@ -21,6 +66,11 @@ const Dashboard: React.FC = () => {
                         <p className="text-gray-600 mt-1">
                             Here's what's happening with your business today.
                         </p>
+                        {client && (
+                            <div className="mt-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm inline-block">
+                                🏢 {client.name}
+                            </div>
+                        )}
                     </div>
                     <div className="mt-4 sm:mt-0 flex items-center space-x-4">
                         <div className="hidden sm:flex items-center space-x-3">
