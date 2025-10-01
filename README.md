@@ -1,61 +1,220 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Laravel React ERP System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A modern Enterprise Resource Planning (ERP) system built with Laravel 11 backend and React 19 frontend, featuring TypeScript and Tailwind CSS.
 
-## About Laravel
+## 🚀 Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Laravel 11** - Modern PHP framework with API authentication
+- **React 19** - Latest React with TypeScript support
+- **Tailwind CSS** - Utility-first CSS framework for modern UI
+- **Laravel Mix** - Asset compilation and bundling
+- **User Authentication** - Secure login/logout system
+- **Responsive Design** - Mobile-friendly interface
+- **Type Safety** - Full TypeScript support
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 🛠️ Tech Stack
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Backend
+- Laravel 11
+- PHP 8.2+
+- MySQL/PostgreSQL
+- Laravel Sanctum (API Authentication)
+- Laravel Mix (Asset Compilation)
 
-## Learning Laravel
+### Frontend
+- React 19
+- TypeScript
+- Tailwind CSS
+- Axios (HTTP Client)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 📋 Prerequisites
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+- PHP 8.2 or higher
+- Composer
+- Node.js 18+ and npm
+- MySQL/PostgreSQL
+- Git
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## 🚀 Installation
 
-## Laravel Sponsors
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/naid/laravel-react-erp.git
+   cd laravel-react-erp
+   ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+2. **Install PHP dependencies**
+   ```bash
+   composer install
+   ```
 
-### Premium Partners
+3. **Install Node.js dependencies**
+   ```bash
+   npm install
+   ```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+4. **Environment setup**
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
 
-## Contributing
+5. **Database setup**
+   ```bash
+   # Configure your database in .env file
+   php artisan migrate
+   php artisan db:seed
+   ```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+6. **Build assets**
+   ```bash
+   npm run dev
+   ```
 
-## Code of Conduct
+## 🏃‍♂️ Running the Application
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Development Mode
 
-## Security Vulnerabilities
+1. **Start Laravel backend**
+   ```bash
+   php artisan serve
+   ```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+2. **Build frontend assets** (in a separate terminal)
+   ```bash
+   npm run dev
+   ```
 
-## License
+3. **Access the application**
+   - Open your browser and go to `http://localhost:8000`
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Production Mode
+
+1. **Build production assets**
+   ```bash
+   npm run production
+   ```
+
+2. **Start Laravel server**
+   ```bash
+   php artisan serve
+   ```
+
+## 🔐 Default Credentials
+
+- **Email:** `admin@erp.com`
+- **Password:** `password`
+
+## 📁 Project Structure
+
+```
+laravel-react-erp/
+├── app/
+│   ├── Http/Controllers/
+│   │   └── AuthController.php
+│   └── Models/
+│       ├── User.php
+│       ├── Role.php
+│       └── ...
+├── resources/
+│   ├── js/
+│   │   ├── components/
+│   │   │   ├── App.tsx
+│   │   │   ├── Login.tsx
+│   │   │   ├── Dashboard.tsx
+│   │   │   └── contexts/
+│   │   │       └── AuthContext.tsx
+│   │   ├── types/
+│   │   │   └── index.ts
+│   │   └── app.tsx
+│   ├── css/
+│   │   └── app.css
+│   └── views/
+│       └── welcome.blade.php
+├── routes/
+│   ├── api.php
+│   └── web.php
+├── database/
+│   ├── migrations/
+│   └── seeders/
+└── public/
+    ├── js/
+    └── css/
+```
+
+## 🎨 Frontend Components
+
+### Login Component
+- Email/password authentication
+- Form validation with error handling
+- Responsive design with Tailwind CSS
+
+### Dashboard Component
+- User information display
+- Role management
+- Logout functionality
+
+### AuthContext
+- Global authentication state management
+- Login/logout functions
+- Token management
+
+## 🔧 Development Commands
+
+```bash
+# Laravel commands
+php artisan serve              # Start development server
+php artisan migrate           # Run database migrations
+php artisan db:seed           # Seed database
+php artisan key:generate      # Generate application key
+
+# Frontend commands
+npm run dev                   # Build assets once
+npm run production           # Build for production
+npm run watch                # Watch for changes (may cause infinite loop)
+npm run watch-poll           # Watch with polling (more stable)
+```
+
+## 🐛 Troubleshooting
+
+### Infinite Loop with `npm run watch`
+If you experience infinite loops with the watch command, use manual builds instead:
+```bash
+npm run dev  # Build once
+# Make changes to files
+npm run dev  # Build again
+```
+
+### Chrome Extension Errors
+Console errors from Chrome extensions (like password managers) can be safely ignored as they don't affect the application functionality.
+
+## 📝 API Endpoints
+
+- `POST /api/login` - User authentication
+- `POST /api/logout` - User logout
+- `GET /api/me` - Get current user
+- `POST /api/register` - User registration
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the BSD-3-Clause License - see the [LICENSE](LICENSE) file for details.
+
+## 👨‍💻 Author
+
+**Ronald Magcalas**
+- GitHub: [@naid](https://github.com/naid)
+
+## 🙏 Acknowledgments
+
+- Laravel team for the amazing framework
+- React team for the powerful frontend library
+- Tailwind CSS team for the utility-first CSS framework
+- All contributors and the open-source community
