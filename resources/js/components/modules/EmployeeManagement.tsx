@@ -1,0 +1,569 @@
+import React, { useState, useEffect } from "react";
+
+interface Employee {
+    id: number;
+    first_name: string;
+    last_name: string;
+    email: string;
+    position: string;
+    department: string;
+    hire_date: string;
+    salary: number;
+    status: "active" | "inactive";
+    phone: string;
+    address: string;
+}
+
+const EmployeeManagement: React.FC = () => {
+    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    const [editingEmployee, setEditingEmployee] = useState<Employee | null>(
+        null
+    );
+    const [searchTerm, setSearchTerm] = useState("");
+    const [filterDepartment, setFilterDepartment] = useState("all");
+
+    // Mock data for demonstration
+    useEffect(() => {
+        const mockEmployees: Employee[] = [
+            {
+                id: 1,
+                first_name: "John",
+                last_name: "Doe",
+                email: "john.doe@company.com",
+                position: "Software Engineer",
+                department: "Engineering",
+                hire_date: "2023-01-15",
+                salary: 75000,
+                status: "active",
+                phone: "+1 (555) 123-4567",
+                address: "123 Main St, City, State 12345",
+            },
+            {
+                id: 2,
+                first_name: "Jane",
+                last_name: "Smith",
+                email: "jane.smith@company.com",
+                position: "Project Manager",
+                department: "Management",
+                hire_date: "2022-06-20",
+                salary: 85000,
+                status: "active",
+                phone: "+1 (555) 234-5678",
+                address: "456 Oak Ave, City, State 12345",
+            },
+            {
+                id: 3,
+                first_name: "Mike",
+                last_name: "Johnson",
+                email: "mike.johnson@company.com",
+                position: "Designer",
+                department: "Design",
+                hire_date: "2023-03-10",
+                salary: 65000,
+                status: "active",
+                phone: "+1 (555) 345-6789",
+                address: "789 Pine St, City, State 12345",
+            },
+        ];
+        setEmployees(mockEmployees);
+        setLoading(false);
+    }, []);
+
+    const filteredEmployees = employees.filter((employee) => {
+        const matchesSearch =
+            employee.first_name
+                .toLowerCase()
+                .includes(searchTerm.toLowerCase()) ||
+            employee.last_name
+                .toLowerCase()
+                .includes(searchTerm.toLowerCase()) ||
+            employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            employee.position.toLowerCase().includes(searchTerm.toLowerCase());
+
+        const matchesDepartment =
+            filterDepartment === "all" ||
+            employee.department === filterDepartment;
+
+        return matchesSearch && matchesDepartment;
+    });
+
+    const departments = Array.from(
+        new Set(employees.map((emp) => emp.department))
+    );
+
+    return (
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h2 className="text-2xl font-bold text-gray-900">
+                            Employee Management
+                        </h2>
+                        <p className="text-gray-600 mt-1">
+                            Manage your team members and their information
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => setShowModal(true)}
+                        className="mt-4 sm:mt-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 transform hover:scale-105 hover:shadow-lg flex items-center space-x-2"
+                    >
+                        <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                            />
+                        </svg>
+                        <span>Add Employee</span>
+                    </button>
+                </div>
+            </div>
+
+            {/* Filters */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Search
+                        </label>
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg
+                                    className="h-5 w-5 text-gray-400"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                    />
+                                </svg>
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Search employees..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Department
+                        </label>
+                        <select
+                            value={filterDepartment}
+                            onChange={(e) =>
+                                setFilterDepartment(e.target.value)
+                            }
+                            className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        >
+                            <option value="all">All Departments</option>
+                            {departments.map((dept) => (
+                                <option key={dept} value={dept}>
+                                    {dept}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                    <div className="flex items-center">
+                        <div className="p-3 rounded-full bg-blue-100">
+                            <svg
+                                className="w-6 h-6 text-blue-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+                                />
+                            </svg>
+                        </div>
+                        <div className="ml-4">
+                            <p className="text-sm font-medium text-gray-600">
+                                Total Employees
+                            </p>
+                            <p className="text-2xl font-bold text-gray-900">
+                                {employees.length}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                    <div className="flex items-center">
+                        <div className="p-3 rounded-full bg-green-100">
+                            <svg
+                                className="w-6 h-6 text-green-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                            </svg>
+                        </div>
+                        <div className="ml-4">
+                            <p className="text-sm font-medium text-gray-600">
+                                Active
+                            </p>
+                            <p className="text-2xl font-bold text-gray-900">
+                                {
+                                    employees.filter(
+                                        (emp) => emp.status === "active"
+                                    ).length
+                                }
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                    <div className="flex items-center">
+                        <div className="p-3 rounded-full bg-yellow-100">
+                            <svg
+                                className="w-6 h-6 text-yellow-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                                />
+                            </svg>
+                        </div>
+                        <div className="ml-4">
+                            <p className="text-sm font-medium text-gray-600">
+                                Departments
+                            </p>
+                            <p className="text-2xl font-bold text-gray-900">
+                                {departments.length}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                    <div className="flex items-center">
+                        <div className="p-3 rounded-full bg-purple-100">
+                            <svg
+                                className="w-6 h-6 text-purple-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                                />
+                            </svg>
+                        </div>
+                        <div className="ml-4">
+                            <p className="text-sm font-medium text-gray-600">
+                                Avg Salary
+                            </p>
+                            <p className="text-2xl font-bold text-gray-900">
+                                $
+                                {Math.round(
+                                    employees.reduce(
+                                        (sum, emp) => sum + emp.salary,
+                                        0
+                                    ) / employees.length || 0
+                                ).toLocaleString()}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Employee Table */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                        Employee List
+                    </h3>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Employee
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Position
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Department
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Salary
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {filteredEmployees.map((employee) => (
+                                <tr
+                                    key={employee.id}
+                                    className="hover:bg-gray-50"
+                                >
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="flex items-center">
+                                            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center">
+                                                <span className="text-sm font-medium text-white">
+                                                    {employee.first_name.charAt(
+                                                        0
+                                                    )}
+                                                    {employee.last_name.charAt(
+                                                        0
+                                                    )}
+                                                </span>
+                                            </div>
+                                            <div className="ml-4">
+                                                <div className="text-sm font-medium text-gray-900">
+                                                    {employee.first_name}{" "}
+                                                    {employee.last_name}
+                                                </div>
+                                                <div className="text-sm text-gray-500">
+                                                    {employee.email}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {employee.position}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {employee.department}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        ${employee.salary.toLocaleString()}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <span
+                                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                employee.status === "active"
+                                                    ? "bg-green-100 text-green-800"
+                                                    : "bg-red-100 text-red-800"
+                                            }`}
+                                        >
+                                            {employee.status}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div className="flex space-x-2">
+                                            <button
+                                                onClick={() => {
+                                                    setEditingEmployee(
+                                                        employee
+                                                    );
+                                                    setShowModal(true);
+                                                }}
+                                                className="text-blue-600 hover:text-blue-900"
+                                            >
+                                                Edit
+                                            </button>
+                                            <button className="text-red-600 hover:text-red-900">
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* Add/Edit Employee Modal */}
+            {showModal && (
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                    <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                        <div className="mt-3">
+                            <h3 className="text-lg font-medium text-gray-900 mb-4">
+                                {editingEmployee
+                                    ? "Edit Employee"
+                                    : "Add New Employee"}
+                            </h3>
+                            <form className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            First Name
+                                        </label>
+                                        <input
+                                            type="text"
+                                            defaultValue={
+                                                editingEmployee?.first_name ||
+                                                ""
+                                            }
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            Last Name
+                                        </label>
+                                        <input
+                                            type="text"
+                                            defaultValue={
+                                                editingEmployee?.last_name || ""
+                                            }
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Email
+                                    </label>
+                                    <input
+                                        type="email"
+                                        defaultValue={
+                                            editingEmployee?.email || ""
+                                        }
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            Position
+                                        </label>
+                                        <input
+                                            type="text"
+                                            defaultValue={
+                                                editingEmployee?.position || ""
+                                            }
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            Department
+                                        </label>
+                                        <select
+                                            defaultValue={
+                                                editingEmployee?.department ||
+                                                ""
+                                            }
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        >
+                                            <option value="">
+                                                Select Department
+                                            </option>
+                                            <option value="Engineering">
+                                                Engineering
+                                            </option>
+                                            <option value="Management">
+                                                Management
+                                            </option>
+                                            <option value="Design">
+                                                Design
+                                            </option>
+                                            <option value="Sales">Sales</option>
+                                            <option value="Marketing">
+                                                Marketing
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            Salary
+                                        </label>
+                                        <input
+                                            type="number"
+                                            defaultValue={
+                                                editingEmployee?.salary || ""
+                                            }
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            Status
+                                        </label>
+                                        <select
+                                            defaultValue={
+                                                editingEmployee?.status ||
+                                                "active"
+                                            }
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        >
+                                            <option value="active">
+                                                Active
+                                            </option>
+                                            <option value="inactive">
+                                                Inactive
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="flex justify-end space-x-3 pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowModal(false);
+                                            setEditingEmployee(null);
+                                        }}
+                                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                                    >
+                                        {editingEmployee ? "Update" : "Add"}{" "}
+                                        Employee
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default EmployeeManagement;
