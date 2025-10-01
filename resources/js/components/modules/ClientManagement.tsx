@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
 
 interface Client {
     id: number;
@@ -7,6 +8,10 @@ interface Client {
     email: string;
     phone: string;
     address: string;
+    city: string;
+    state: string;
+    postal_code: string;
+    country: string;
     industry: string;
     status: "active" | "inactive" | "prospect";
     created_date: string;
@@ -16,6 +21,7 @@ interface Client {
 }
 
 const ClientManagement: React.FC = () => {
+    const { token } = useAuth();
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -23,56 +29,46 @@ const ClientManagement: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [filterStatus, setFilterStatus] = useState("all");
     const [filterIndustry, setFilterIndustry] = useState("all");
+    const [error, setError] = useState<string | null>(null);
 
-    // Mock data for demonstration
+    // Fetch clients from API
     useEffect(() => {
-        const mockClients: Client[] = [
-            {
-                id: 1,
-                company_name: "TechCorp Solutions",
-                contact_person: "Sarah Johnson",
-                email: "sarah.johnson@techcorp.com",
-                phone: "+1 (555) 123-4567",
-                address: "123 Business Ave, Tech City, TC 12345",
-                industry: "Technology",
-                status: "active",
-                created_date: "2023-01-15",
-                last_contact: "2024-01-10",
-                total_projects: 5,
-                total_revenue: 125000,
-            },
-            {
-                id: 2,
-                company_name: "Global Manufacturing Inc",
-                contact_person: "Michael Chen",
-                email: "m.chen@globalmfg.com",
-                phone: "+1 (555) 234-5678",
-                address: "456 Industrial Blvd, Manufacturing City, MC 23456",
-                industry: "Manufacturing",
-                status: "active",
-                created_date: "2022-08-20",
-                last_contact: "2024-01-05",
-                total_projects: 3,
-                total_revenue: 89000,
-            },
-            {
-                id: 3,
-                company_name: "Creative Agency Ltd",
-                contact_person: "Emily Rodriguez",
-                email: "emily@creativeagency.com",
-                phone: "+1 (555) 345-6789",
-                address: "789 Creative St, Design District, DD 34567",
-                industry: "Marketing",
-                status: "prospect",
-                created_date: "2024-01-01",
-                last_contact: "2024-01-08",
-                total_projects: 0,
-                total_revenue: 0,
-            },
-        ];
-        setClients(mockClients);
-        setLoading(false);
-    }, []);
+        const fetchClients = async () => {
+            if (!token) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                setLoading(true);
+                setError(null);
+
+                const response = await fetch("/api/clients", {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json",
+                    },
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log("Clients loaded:", data);
+                    setClients(data.clients || []);
+                } else {
+                    const errorData = await response.json();
+                    console.error("Failed to load clients:", errorData);
+                    setError(errorData.message || "Failed to load clients");
+                }
+            } catch (error) {
+                console.error("Error fetching clients:", error);
+                setError("Network error while loading clients");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchClients();
+    }, [token]);
 
     const filteredClients = clients.filter((client) => {
         const matchesSearch =
@@ -103,6 +99,151 @@ const ClientManagement: React.FC = () => {
     const activeClients = clients.filter(
         (client) => client.status === "active"
     ).length;
+
+    // Handle form submission
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!token) return;
+
+        const formData = new FormData(e.currentTarget);
+        const clientData = {
+            company_name: formData.get("company_name") as string,
+            contact_person: formData.get("contact_person") as string,
+            email: formData.get("email") as string,
+            phone: formData.get("phone") as string,
+            address: formData.get("address") as string,
+            city: formData.get("city") as string,
+            state: formData.get("state") as string,
+            postal_code: formData.get("postal_code") as string,
+            country: formData.get("country") as string,
+        };
+
+        try {
+            const url = editingClient
+                ? `/api/clients/${editingClient.id}`
+                : "/api/clients";
+            const method = editingClient ? "PUT" : "POST";
+
+            const response = await fetch(url, {
+                method,
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                    Accept: "application/json",
+                },
+                body: JSON.stringify(clientData),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log("Client saved:", data);
+
+                // Refresh the clients list
+                const clientsResponse = await fetch("/api/clients", {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json",
+                    },
+                });
+
+                if (clientsResponse.ok) {
+                    const clientsData = await clientsResponse.json();
+                    setClients(clientsData.clients || []);
+                }
+
+                setShowModal(false);
+                setEditingClient(null);
+            } else {
+                const errorData = await response.json();
+                console.error("Failed to save client:", errorData);
+                setError(errorData.message || "Failed to save client");
+            }
+        } catch (error) {
+            console.error("Error saving client:", error);
+            setError("Network error while saving client");
+        }
+    };
+
+    // Handle delete client
+    const handleDelete = async (clientId: number) => {
+        if (!token || !confirm("Are you sure you want to delete this client?"))
+            return;
+
+        try {
+            const response = await fetch(`/api/clients/${clientId}`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: "application/json",
+                },
+            });
+
+            if (response.ok) {
+                // Refresh the clients list
+                const clientsResponse = await fetch("/api/clients", {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json",
+                    },
+                });
+
+                if (clientsResponse.ok) {
+                    const clientsData = await clientsResponse.json();
+                    setClients(clientsData.clients || []);
+                }
+            } else {
+                const errorData = await response.json();
+                console.error("Failed to delete client:", errorData);
+                setError(errorData.message || "Failed to delete client");
+            }
+        } catch (error) {
+            console.error("Error deleting client:", error);
+            setError("Network error while deleting client");
+        }
+    };
+
+    // Show loading state
+    if (loading) {
+        return (
+            <div className="space-y-6">
+                <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                    <div className="flex items-center justify-center py-12">
+                        <div className="text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+                            <p className="mt-4 text-gray-600">
+                                Loading clients...
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Show error state
+    if (error) {
+        return (
+            <div className="space-y-6">
+                <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                    <div className="flex items-center justify-center py-12">
+                        <div className="text-center">
+                            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                Error Loading Clients
+                            </h3>
+                            <p className="text-gray-600 mb-4">{error}</p>
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                            >
+                                Retry
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -426,7 +567,12 @@ const ClientManagement: React.FC = () => {
                                             >
                                                 Edit
                                             </button>
-                                            <button className="text-red-600 hover:text-red-900">
+                                            <button
+                                                onClick={() =>
+                                                    handleDelete(client.id)
+                                                }
+                                                className="text-red-600 hover:text-red-900"
+                                            >
                                                 Delete
                                             </button>
                                         </div>
@@ -448,17 +594,19 @@ const ClientManagement: React.FC = () => {
                                     ? "Edit Client"
                                     : "Add New Client"}
                             </h3>
-                            <form className="space-y-4">
+                            <form onSubmit={handleSubmit} className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">
                                         Company Name
                                     </label>
                                     <input
                                         type="text"
+                                        name="company_name"
                                         defaultValue={
                                             editingClient?.company_name || ""
                                         }
                                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500"
+                                        required
                                     />
                                 </div>
                                 <div>
@@ -467,6 +615,7 @@ const ClientManagement: React.FC = () => {
                                     </label>
                                     <input
                                         type="text"
+                                        name="contact_person"
                                         defaultValue={
                                             editingClient?.contact_person || ""
                                         }
@@ -479,6 +628,7 @@ const ClientManagement: React.FC = () => {
                                     </label>
                                     <input
                                         type="email"
+                                        name="email"
                                         defaultValue={
                                             editingClient?.email || ""
                                         }
@@ -492,6 +642,7 @@ const ClientManagement: React.FC = () => {
                                         </label>
                                         <input
                                             type="tel"
+                                            name="phone"
                                             defaultValue={
                                                 editingClient?.phone || ""
                                             }
@@ -500,68 +651,71 @@ const ClientManagement: React.FC = () => {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700">
-                                            Industry
+                                            City
                                         </label>
-                                        <select
+                                        <input
+                                            type="text"
+                                            name="city"
                                             defaultValue={
-                                                editingClient?.industry || ""
+                                                editingClient?.city || ""
                                             }
                                             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500"
-                                        >
-                                            <option value="">
-                                                Select Industry
-                                            </option>
-                                            <option value="Technology">
-                                                Technology
-                                            </option>
-                                            <option value="Manufacturing">
-                                                Manufacturing
-                                            </option>
-                                            <option value="Marketing">
-                                                Marketing
-                                            </option>
-                                            <option value="Healthcare">
-                                                Healthcare
-                                            </option>
-                                            <option value="Finance">
-                                                Finance
-                                            </option>
-                                            <option value="Education">
-                                                Education
-                                            </option>
-                                        </select>
+                                        />
                                     </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            State
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="state"
+                                            defaultValue={
+                                                editingClient?.state || ""
+                                            }
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            Postal Code
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="postal_code"
+                                            defaultValue={
+                                                editingClient?.postal_code || ""
+                                            }
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Country
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="country"
+                                        defaultValue={
+                                            editingClient?.country || ""
+                                        }
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500"
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">
                                         Address
                                     </label>
                                     <textarea
+                                        name="address"
                                         defaultValue={
                                             editingClient?.address || ""
                                         }
                                         rows={3}
                                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500"
                                     />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        Status
-                                    </label>
-                                    <select
-                                        defaultValue={
-                                            editingClient?.status || "prospect"
-                                        }
-                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500"
-                                    >
-                                        <option value="prospect">
-                                            Prospect
-                                        </option>
-                                        <option value="active">Active</option>
-                                        <option value="inactive">
-                                            Inactive
-                                        </option>
-                                    </select>
                                 </div>
                                 <div className="flex justify-end space-x-3 pt-4">
                                     <button
